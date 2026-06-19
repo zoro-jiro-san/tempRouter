@@ -1,19 +1,29 @@
 # tempRouter
 
 > **Pay an LLM only after you can prove it never saw your prompt.**
-> A payable endpoint for inference on MPP — pay per response-chunk in pathUSD, end-to-end encrypted to a real Intel TDX enclave you verify before you pay. — *Berlin MPP Hackathon @ Futura Camp 2026.*
+> Confidential, pay-per-use LLM inference for agents — end-to-end encrypted to a real
+> Intel TDX enclave your agent verifies (Intel DCAP) *before* it pays, per response-chunk
+> in pathUSD on Tempo.
 
 **🟢 Live:** https://temprouter.onrender.com · [`/openapi.json`](https://temprouter.onrender.com/openapi.json) · [`/tee/attestation`](https://temprouter.onrender.com/tee/attestation)
 
-An AI agent pays per response-chunk in **pathUSD** on Tempo — but only after it
-cryptographically verifies (Intel DCAP) that the prompt runs inside a **real Phala
-Intel TDX enclave** that can't read it. tempRouter is a **blind relay**: it forwards
-ciphertext, holds no key, and never sees plaintext.
+## The problem
 
-Payment is the easy half — MPP already does per-chunk stablecoin billing. What
-tempRouter adds: **provable confidentiality on a payable endpoint** — the prompt is
-end-to-end encrypted to a real Intel TDX enclave, and the agent runs Intel DCAP on the
-live quote and refuses to pay (signs zero vouchers) unless the enclave is genuine.
+When an autonomous agent hits a secret in its own prompt — an API key, a private key, a
+seed phrase, a customer's PII — it has two bad options: ship that secret to a third-party
+model host (which can log it, retain it, or train on it — and you can't prove it didn't),
+or drop the task. There's no clean way to **pay per use** for inference that can *prove* it
+never read your data.
+
+**tempRouter is the private lane for exactly those prompts.** Your agent detects the
+secret locally, encrypts the prompt to a key that exists only inside a **real Phala Intel
+TDX enclave**, verifies that enclave with **Intel DCAP** *before* any money moves, and only
+then pays per response-chunk in **pathUSD** on Tempo. tempRouter itself is a **blind
+relay** — it forwards ciphertext, holds no key, and never sees plaintext. A failed
+attestation signs **zero vouchers**: you never pay a host that can't prove it's blind.
+
+Payment is the easy half — MPP already does per-chunk stablecoin billing. The half
+tempRouter adds is **provable confidentiality on a payable endpoint**.
 
 ## How it fits together
 
@@ -124,5 +134,12 @@ decrypt to plaintext answer.`
 - ✅ Cooperative `manager.close()` settles on-chain as the payee (opt-in via `TEMPO_RECIPIENT_PRIVATE_KEY`).
 - ✅ SDK · CLI · MCP · agent skill shipped (see **Integrate** above), all verified end-to-end on testnet.
 
-See [`DESIGN.md`](DESIGN.md) for the locked design + 4-day plan, [`CONTEXT.md`](CONTEXT.md)
+See [`DESIGN.md`](DESIGN.md) for the original design, [`CONTEXT.md`](CONTEXT.md)
 for the domain glossary, and `docs/adr/` for the load-bearing decisions.
+
+---
+
+<sub>Origin: built at the Berlin MPP Hackathon @ Futura Camp 2026; now maintained as
+standalone confidential-inference infrastructure. Scope is Tempo Moderato **testnet**
+(pathUSD) with an OSS model (`gpt-oss:20b`) in the enclave — see the honest-scope notes
+above and in `docs/adr/`.</sub>

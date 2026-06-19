@@ -8,6 +8,13 @@ cryptographically verifies (Intel DCAP) that inference runs inside a real Phala
 Intel TDX enclave that cannot read the prompt. The relay is blind: it forwards
 only ciphertext and never holds a decryption key.
 
+## The problem it solves
+When an agent's prompt contains a secret (API key, private key, seed phrase, customer
+PII), sending it to a third-party model host means trusting a promise it won't be logged
+or trained on. tempRouter is the private lane for those prompts: verify the enclave with
+Intel DCAP before paying, encrypt to a key only the enclave holds, and pay zero if the
+attestation fails.
+
 ## When to use
 Use tempRouter when the prompt contains secrets, credentials, PII, or other
 confidential data that must never reach a third-party model host. For non-sensitive

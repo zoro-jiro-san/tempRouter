@@ -11,7 +11,8 @@ description: Call tempRouter — a payable, end-to-end-encrypted LLM inference e
 - `GET /openapi.json` · `GET /llms.txt` — MPP service discovery
 
 ## What it is
-A **payable inference endpoint on MPP**: your agent pays per response-chunk in **pathUSD**
+The **private lane** for prompts that hold secrets you must not leak to a third-party
+model host. A **payable inference endpoint on MPP**: your agent pays per response-chunk in **pathUSD**
 on Tempo for an LLM answer that is **end-to-end encrypted** to a real **Phala Intel TDX
 enclave**. Before any money moves, the agent runs **Intel DCAP** on the live enclave quote;
 a failed check signs **zero vouchers**. tempRouter is a **blind relay** — it forwards only

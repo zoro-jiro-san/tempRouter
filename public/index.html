@@ -184,7 +184,7 @@
 <div class="hero"><div class="wrap">
   <span class="label">Payable inference · MPP · Tempo · Phala Intel TDX</span>
   <h1>Pay an LLM only after you<br/>prove it never saw your prompt<span class="period">.</span></h1>
-  <p class="sub">tempRouter is a <b>payable inference endpoint on MPP</b>. Your agent verifies, with Intel DCAP, that the prompt runs inside a <b>real Intel TDX enclave</b> that can't read it — then pays per response-chunk in <b>pathUSD</b> on Tempo. End-to-end encrypted; the relay is blind. Ships as an <b>SDK, CLI, MCP server, and agent skill</b>.</p>
+  <p class="sub">Your agent shouldn't paste an API key, a private key, or a customer's PII into a model host that can log it. tempRouter is the <b>private lane</b> for those prompts: end-to-end encrypted to a <b>real Intel TDX enclave</b> your agent verifies with <b>Intel DCAP</b> before it pays — per response-chunk in <b>pathUSD</b> on Tempo. The relay is blind. Ships as an <b>SDK, CLI, MCP server, and agent skill</b>.</p>
   <div class="badges">
     <span class="pill accent"><span class="d">●</span> no API key · no signup</span>
     <span class="pill"><span class="d">●</span> verify-before-pay</span>
@@ -212,8 +212,8 @@ $ decrypt locally                → <span class="g">plaintext — seen only by 
 
 <section id="why"><div class="wrap">
   <span class="label">Why</span>
-  <h2>Payment was the easy half<span class="period">.</span></h2>
-  <p class="lede">MPP already does per-chunk stablecoin billing. tempRouter ships the half MPP left open — <b>provable confidentiality</b> — as a payable endpoint any agent can discover and pay.</p>
+  <h2>Secrets shouldn't pay to leak<span class="period">.</span></h2>
+  <p class="lede">When an agent hits an API key, a private key, or PII in its own prompt, sending it to a third-party model host means trusting a promise it won't be logged, retained, or trained on. tempRouter replaces the promise with a <b>proof</b> — and signs zero vouchers until that proof checks out. <b>Payment was the easy half:</b> MPP already does per-chunk stablecoin billing; the half tempRouter adds is <b>provable confidentiality</b>.</p>
   <div class="grid">
     <div class="card"><h3><span class="ico" aria-hidden="true"></span>Verify before you pay</h3><p>The agent runs Intel DCAP on the live enclave quote <b>before</b> signing the first voucher. Fail the check, sign zero vouchers — and a bad enclave can't decrypt the prompt anyway.</p></div>
     <div class="card"><h3><span class="ico" aria-hidden="true"></span>Two-phase attestation</h3><p>Pre-pay: genuine TDX + UpToDate TCB + key binding + code measurement. Post-pay receipt: enclave ed25519 over the exact ciphertext. Every check is auditable on the wire.</p></div>
