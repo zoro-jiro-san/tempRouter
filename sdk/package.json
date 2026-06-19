@@ -18,7 +18,7 @@
     "prepublishOnly": "npm run clean && npm run build"
   },
   "keywords": ["tempo", "mpp", "tee", "tdx", "confidential", "inference", "x402", "stablecoin"],
-  "license": "MIT",
+  "license": "Apache-2.0",
   "engines": { "node": ">=20.12" },
   "peerDependencies": {
     "@solrouter/sdk": "^1.1.0",
