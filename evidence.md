@@ -101,7 +101,7 @@ the attested enclave. First ~300 chars:
 **Why this is genuine model output (not a stub):** the full answer is a structured
 incident-response runbook (blast-radius analysis, a 10-step rotation order, per-platform
 AWS/GCP/Stripe tables) and — decisively — it generated a `grep` snippet echoing the **exact**
-leaked key from the prompt (`sk-proj-1a2b3c4d5e6f7g8h9i0jklmnopqrstuvwx`). A stub cannot reproduce
+leaked key from the prompt (a synthetic `sk-proj-1a2b…` test key, truncated here). A stub cannot reproduce
 prompt-specific content inside generated code. Consistent with `nosana:gpt-oss:20b`.
 
 ---

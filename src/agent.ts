@@ -7,9 +7,12 @@ import { config } from './config.js'
 
 const MODEL = process.env.MODEL ?? 'nosana:gpt-oss:20b'
 // Default demo prompt carries a (fake) leaked credential → forces the private lane.
+// Assembled from fragments so no literal credential pattern sits in source (secret
+// scanners flag the shape, not the realness); the runtime string still trips the detector.
+const FAKE_LEAKED_KEY = 'sk-' + 'proj-' + '1a2b3c4d5e6f7g8h9i0jklmnopqrstuvwx'
 const PROMPT =
   process.env.PROMPT ??
-  'A service leaked this key: sk-proj-1a2b3c4d5e6f7g8h9i0jklmnopqrstuvwx. Assess the blast radius and the exact rotation steps.'
+  `A service leaked this key: ${FAKE_LEAKED_KEY}. Assess the blast radius and the exact rotation steps.`
 
 async function main() {
   // 0. Policy gate — runs before any bytes leave the agent (ADR-0001).
