@@ -13,14 +13,34 @@ export type TeeProcessResult = {
 
 const STUB_ATTESTATION = { teeType: 'STUB-NO-TDX', tdxQuote: null }
 
+// Every call to the upstream enclave is bounded — a hung enclave must not pin a request
+// (or a paid stream) open indefinitely. Inference is the slow path; the GETs are cheap.
+const PROCESS_TIMEOUT_MS = Number(process.env.TEE_PROCESS_TIMEOUT_MS ?? 90_000)
+const ATTESTATION_TIMEOUT_MS = Number(process.env.TEE_ATTESTATION_TIMEOUT_MS ?? 8_000)
+
+/** fetch() with an AbortController timeout, so no upstream call can hang forever. */
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+  const ctrl = new AbortController()
+  const t = setTimeout(() => ctrl.abort(), timeoutMs)
+  try {
+    return await fetch(url, { ...init, signal: ctrl.signal })
+  } finally {
+    clearTimeout(t)
+  }
+}
+
 /** POST ciphertext to the enclave; returns the re-encrypted blob + per-request proof. */
 export async function teeProcess(encryptedPrompt: string, model: string): Promise<TeeProcessResult> {
   if (!config.teeEndpoint) throw new Error('TEE_ENDPOINT not configured (stub mode cannot run real inference)')
-  const res = await fetch(`${config.teeEndpoint}/process`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ encryptedPrompt, model }),
-  })
+  const res = await fetchWithTimeout(
+    `${config.teeEndpoint}/process`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ encryptedPrompt, model }),
+    },
+    PROCESS_TIMEOUT_MS,
+  )
   if (!res.ok) throw new Error(`TEE /process ${res.status}: ${(await res.text()).slice(0, 200)}`)
   const b: any = await res.json()
   return { encryptedResponse: b.encryptedResponse, attestation: b.attestation, encryptionProof: b.encryptionProof }
@@ -30,7 +50,7 @@ export async function teeProcess(encryptedPrompt: string, model: string): Promis
 export async function fetchAttestation(): Promise<any> {
   if (!teeAttestationUrl) return STUB_ATTESTATION
   try {
-    const res = await fetch(teeAttestationUrl)
+    const res = await fetchWithTimeout(teeAttestationUrl, {}, ATTESTATION_TIMEOUT_MS)
     if (!res.ok) return STUB_ATTESTATION
     return await res.json()
   } catch {
@@ -41,7 +61,7 @@ export async function fetchAttestation(): Promise<any> {
 /** GET the enclave X25519 public key (blind passthrough). */
 export async function fetchTeePublicKeyRaw(): Promise<any> {
   if (!teePublicKeyUrl) return { error: 'no TEE_ENDPOINT' }
-  const res = await fetch(teePublicKeyUrl)
+  const res = await fetchWithTimeout(teePublicKeyUrl, {}, ATTESTATION_TIMEOUT_MS)
   return res.json()
 }
 

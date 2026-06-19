@@ -10,15 +10,30 @@
 
 import { serve as honoServe } from '@hono/node-server'
 import { Hono } from 'hono'
+import { cors } from 'hono/cors'
 import { Mppx, tempo, Store } from 'mppx/server'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { privateKeyToAccount } from 'viem/accounts'
+import { z } from 'zod'
 import { config, resolveMode, tempoTestnet, type PrivacyMode } from './config.js'
 import { teeProcess, fetchAttestation, fetchTeePublicKeyRaw, chunk } from './upstream.js'
+import { log } from './logger.js'
 
 const sha256hex = (s: string) => createHash('sha256').update(s).digest('hex')
 const PROOF_SENTINEL = '__TEMPROUTER_PROOF__' // final SSE frame carrying the post-pay receipt
+const startedAt = Date.now()
+
+// Cap the request body. The only content body is an encrypted prompt; anything past this
+// is abuse, not a prompt. Management (voucher/close) POSTs are header-only (0 bytes).
+const MAX_BODY_BYTES = Number(process.env.MAX_BODY_BYTES ?? 1_000_000)
+
+// The encrypted-prompt content body. The relay is blind: it validates SHAPE only and
+// never inspects/decrypts the ciphertext.
+const ContentBody = z.object({
+  encryptedPrompt: z.string().min(1),
+  model: z.string().min(1).max(128).optional(),
+})
 
 // When the payee key is configured, the server signs the on-chain CLOSE as the
 // recipient (settlement sender must equal the channel payee), paying the tx fee from
@@ -45,10 +60,41 @@ const mppx = Mppx.create({
 })
 
 let MODE: PrivacyMode = 'stub'
-mppx.onChallengeCreated((ctx) => console.log(`[challenge] ${ctx.method?.intent}`))
-mppx.onPaymentFailed((ctx) => console.log(`[payfail] ${ctx.error?.message ?? ctx.error}`))
+mppx.onChallengeCreated((ctx) => log.info('mpp.challenge', { intent: ctx.method?.intent }))
+mppx.onPaymentFailed((ctx) => log.warn('mpp.payfail', { error: String(ctx.error?.message ?? ctx.error) }))
 
 const app = new Hono()
+
+// Agents call cross-origin; allow the MPP handshake headers explicitly.
+app.use(
+  '*',
+  cors({
+    origin: '*',
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
+    allowHeaders: ['content-type', 'authorization'],
+    exposeHeaders: ['payment-receipt', 'payment-required'],
+    maxAge: 86400,
+  }),
+)
+
+// One structured access-log line per request (method, path, status, ms).
+app.use('*', async (c, next) => {
+  const t0 = Date.now()
+  await next()
+  log.info('req', { method: c.req.method, path: new URL(c.req.url).pathname, status: c.res.status, ms: Date.now() - t0 })
+})
+
+// Don't leak internals on an unexpected throw; log server-side, return a clean 500.
+app.onError((err, c) => {
+  log.error('unhandled', { path: new URL(c.req.url).pathname, error: err instanceof Error ? err.message : String(err) })
+  return c.json({ error: 'internal_error' }, 500)
+})
+app.notFound((c) => c.json({ error: 'not_found' }, 404))
+
+// Liveness/readiness: process is up, and whether the private lane is actually reachable.
+app.get('/health', (c) =>
+  c.json({ status: 'ok', mode: MODE, ready: MODE === 'tdx-live', uptimeSec: Math.floor((Date.now() - startedAt) / 1000) }),
+)
 
 app.get('/', (c) => {
   // Humans get the branded landing page; agents/curl get machine JSON.
@@ -93,6 +139,10 @@ app.post('/v1/chat/completions/stream', async (c) => {
   // correctly classify as management (clean 204 ack, no spurious charge). This is what
   // unblocks multi-unit streaming (chunkCount > 1). See ADR-0003.
   const bodyText = await c.req.raw.text()
+  if (bodyText.length > MAX_BODY_BYTES) {
+    log.warn('body.too_large', { bytes: bodyText.length })
+    return c.json({ error: 'payload_too_large', maxBytes: MAX_BODY_BYTES }, 413)
+  }
   const reqForMppx = new Request(c.req.raw.url, {
     method: 'POST',
     headers: c.req.raw.headers,
@@ -124,12 +174,25 @@ app.post('/v1/chat/completions/stream', async (c) => {
     if (!Mppx.isMissingReceiptResponseError(e)) throw e
   }
 
-  // Content request: run the attested private inference + meter the stream.
+  // Content request: validate the body SHAPE (blind — never inspects ciphertext), then
+  // run the attested private inference + meter the stream.
+  let encryptedPrompt: string
+  let model: string | undefined
   try {
-    const { encryptedPrompt, model } = JSON.parse(bodyText) as { encryptedPrompt: string; model?: string }
-    console.log(`[stream] paid → teeProcess (prompt ${encryptedPrompt?.length ?? 0} bytes)`)
+    const parsed = ContentBody.safeParse(JSON.parse(bodyText))
+    if (!parsed.success) {
+      log.warn('body.invalid', { issues: parsed.error.issues.map((i) => i.path.join('.')) })
+      return c.json({ error: 'invalid_body', detail: 'expected { encryptedPrompt: string, model?: string }' }, 400)
+    }
+    ;({ encryptedPrompt, model } = parsed.data)
+  } catch {
+    return c.json({ error: 'invalid_json' }, 400)
+  }
+
+  try {
+    log.info('stream.paid', { promptBytes: encryptedPrompt.length })
     const tee = await teeProcess(encryptedPrompt, model ?? config.upstreamModel)
-    console.log(`[stream] tee ok → encryptedResponse ${tee.encryptedResponse?.length ?? 0} bytes`)
+    log.info('stream.tee_ok', { responseBytes: tee.encryptedResponse?.length ?? 0 })
 
     const chunks = chunk(tee.encryptedResponse, config.chunkCount)
     const proofFrame = PROOF_SENTINEL + JSON.stringify({ attestation: tee.attestation, encryptionProof: tee.encryptionProof })
@@ -141,7 +204,7 @@ app.post('/v1/chat/completions/stream', async (c) => {
       yield proofFrame // receipt metadata — not a billable unit
     })
   } catch (e: any) {
-    console.error('[stream] ERROR:', e?.message ?? e)
+    log.error('stream.failed', { error: String(e?.message ?? e) })
     return c.json({ error: 'stream_failed', detail: String(e?.message ?? e) }, 500)
   }
 })
@@ -205,8 +268,22 @@ for (const p of ['/SKILL.md', '/skill.md', '/skill', '/skills.md', '/skills']) a
 
 resolveMode().then((mode) => {
   MODE = mode
-  honoServe({ fetch: app.fetch, port: config.port }, (info) => {
-    console.log(`tempRouter on http://localhost:${info.port}  | mode=${MODE}  | recipient=${config.recipient}`)
-    if (MODE !== 'tdx-live') console.log(`⚠️  mode=${MODE}: no live TDX — agents will (correctly) refuse to pay. Set TEE_ENDPOINT for tdx-live.`)
+  const server = honoServe({ fetch: app.fetch, port: config.port }, (info) => {
+    log.info('listening', { port: info.port, mode: MODE, recipient: config.recipient })
+    if (MODE !== 'tdx-live')
+      log.warn('no_live_tdx', { mode: MODE, hint: 'agents will (correctly) refuse to pay; set TEE_ENDPOINT for tdx-live' })
   })
+
+  // Graceful shutdown: stop accepting connections, let in-flight requests drain, then exit.
+  let closing = false
+  const shutdown = (signal: string) => {
+    if (closing) return
+    closing = true
+    log.info('shutdown', { signal })
+    server.close(() => process.exit(0))
+    // Hard cap so a stuck stream can't block the deploy from rolling.
+    setTimeout(() => process.exit(0), 10_000).unref()
+  }
+  process.on('SIGTERM', () => shutdown('SIGTERM'))
+  process.on('SIGINT', () => shutdown('SIGINT'))
 })
