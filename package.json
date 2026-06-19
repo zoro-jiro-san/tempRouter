@@ -11,6 +11,7 @@
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
     "agent": "tsx src/agent.ts",
+    "usecases": "tsx examples/usecases.ts",
     "cli": "tsx cli/temprouter.ts",
     "mcp": "tsx mcp/server.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p sdk/tsconfig.json && tsc --noEmit -p cli/tsconfig.json && tsc --noEmit -p mcp/tsconfig.json",

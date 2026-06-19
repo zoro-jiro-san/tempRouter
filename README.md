@@ -81,6 +81,27 @@ Wire the MCP server into a client (e.g. Claude) with a funded `AGENT_PRIVATE_KEY
 { "command": "npx", "args": ["tsx", "/abs/path/tempRouter/mcp/server.ts"] }
 ```
 
+## Use cases
+
+Three confidential-compute scenarios that each need a blind, attested lane — a public
+model host would see the secret/PII. Each trips the detector on a different signal:
+
+| scenario | trigger | why the private lane |
+|---|---|---|
+| **Leaked credential → incident response** | api-key | a live key in logs must not be re-leaked to a public host |
+| **Support ticket with PII → safe triage** | email/PII | customer data is a GDPR/data-processing problem on a third-party host |
+| **Wallet key exposure → security review** | private key | a seed/key must never reach a public model at all |
+
+```bash
+# dry run (local detector only, no key/network):
+npm run usecases
+# live (real pathUSD on Tempo testnet): fund AGENT_PRIVATE_KEY first
+AGENT_PRIVATE_KEY=0x… SERVER_URL=https://temprouter.onrender.com npm run usecases
+```
+
+The live run prints each attestation verdict, the units/pathUSD paid, and the payer's
+explorer address so the on-chain MPP channel for each scenario is auditable.
+
 ## Run it
 
 ```bash
