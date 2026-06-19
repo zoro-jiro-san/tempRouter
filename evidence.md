@@ -191,6 +191,33 @@ SERVER_URL=https://temprouter.onrender.com npm run cli -- verify
 
 ---
 
+## 9. Multi-use-case run — three confidential-compute scenarios (2026-06-19)
+
+`npm run usecases` was run against the live deployment with a funded testnet key. All
+three scenarios cleared the gate and paid, each via its own MPP session.
+
+| | scenario | detector trigger | pre-pay DCAP | post-pay receipt | paid |
+|---|---|---|---|---|---|
+| 1 | Leaked credential → incident response | `openai-key`, `high-entropy-token` | ✅ genuine TDX, UpToDate | ✅ ed25519 + quote-hash | 1 unit · 0.0002 pathUSD |
+| 2 | Support ticket with PII → safe triage | `email` | ✅ genuine TDX, UpToDate | ✅ ed25519 + quote-hash | 1 unit · 0.0002 pathUSD |
+| 3 | Wallet key exposure → security review | `hex-private-key` | ✅ genuine TDX, UpToDate | ✅ ed25519 + quote-hash | 1 unit · 0.0002 pathUSD |
+
+**Total: 3 × 0.0002 = `0.0006` pathUSD.** Each run detected the sensitive payload locally
+and forced the private lane; plaintext was decrypted only by the agent (it never touched
+the relay).
+
+| | |
+|---|---|
+| **Payer** | `0xA2056e417bF343328e0890702ed7c1961Eb4dbe0` |
+| **Explorer** | https://explore.testnet.tempo.xyz/address/0xA2056e417bF343328e0890702ed7c1961Eb4dbe0 |
+
+The three most recent MPP channel-open transactions at that address are these runs. (The
+CLI does not surface per-run tx hashes; they are auditable on the explorer address page
+above. Capturing the hash programmatically — via the MPP channel-open log — is a tracked
+SDK follow-up.)
+
+---
+
 _Scope: Tempo Moderato **testnet**, pathUSD, OSS model (`gpt-oss:20b`) in the enclave.
 Verification covers DCAP cert-chain + key binding + enclave ed25519 signature; code-measurement
 pinning is opt-in (soft-pin by default). The enclave key is attached to the MPP session as a
