@@ -10,9 +10,9 @@
 // Tempo, then decrypts locally. tempRouter is a blind relay — it only ever sees
 // ciphertext. A failed attestation signs ZERO vouchers.
 //
-// NOTE: the DCAP verifier + secret detector are sourced from ../../src for now (single
-// source of truth with the server repo); folding them in for a standalone publish is a
-// post-hackathon follow-up.
+// The DCAP verifier + secret detector live here in the SDK (./verifyAttestation,
+// ./detectSensitive) so this package is self-contained and publishable; the server
+// is a separate package that never imports them (it is blind by construction).
 
 import { encrypt, decrypt, packageForTEE } from '@solrouter/sdk'
 import { Session } from 'mppx/tempo'
@@ -24,8 +24,8 @@ import {
   verifyAttestation,
   formatReport,
   type VerifyReport,
-} from '../../src/verifyAttestation.js'
-import { detectSensitive, type Detection } from '../../src/detectSensitive.js'
+} from './verifyAttestation.js'
+import { detectSensitive, type Detection } from './detectSensitive.js'
 
 const PROOF_SENTINEL = '__TEMPROUTER_PROOF__' // final SSE frame carrying the post-pay receipt
 const DEFAULT_MODEL = 'nosana:gpt-oss:20b'

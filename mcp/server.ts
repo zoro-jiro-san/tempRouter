@@ -18,8 +18,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
-import { TempRouter, detectSensitive, formatReport, AttestationError } from '../sdk/src/index.js'
-import { config } from '../src/config.js'
+import { TempRouter, detectSensitive, formatReport, AttestationError } from '@temprouter/sdk'
+import { config } from './config.js'
 
 const ok = (t: string) => ({ content: [{ type: 'text' as const, text: t }] })
 const err = (t: string) => ({ content: [{ type: 'text' as const, text: t }], isError: true })

@@ -2,7 +2,7 @@
 // + verify-before-pay + per-chunk MPP metering + decrypt, all via the reusable client.
 // Fail-closed: a failed attestation gate signs ZERO vouchers (ADR-0002).
 
-import { TempRouter, detectSensitive, formatReport, AttestationError } from '../sdk/src/index.js'
+import { TempRouter, detectSensitive, formatReport, AttestationError } from '@temprouter/sdk'
 import { config } from './config.js'
 
 const MODEL = process.env.MODEL ?? 'nosana:gpt-oss:20b'

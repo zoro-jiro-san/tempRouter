@@ -2,7 +2,7 @@
 // end-to-end. Permission granted 2026-06-16. Run: npx tsx scripts/capture-fixture.ts
 import { encrypt, packageForTEE } from '@solrouter/sdk'
 import { writeFileSync, mkdirSync } from 'node:fs'
-import { verifyAttestation, formatReport } from '../src/verifyAttestation.js'
+import { verifyAttestation, formatReport } from '@temprouter/sdk'
 
 const BASE = 'https://solrouter-obb4.onrender.com' // SDK appends /tee/public-key etc.
 const MODEL = 'nosana:gpt-oss:20b' // must match enclave signing convention (verify-attestation.mjs)

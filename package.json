@@ -4,12 +4,18 @@
   "private": true,
   "type": "module",
   "description": "Confidential-inference rail for agents on Tempo — verify a real Intel TDX enclave, then pay per response-chunk in pathUSD. Server + SDK + CLI + MCP.",
+  "workspaces": ["sdk", "cli", "mcp"],
   "scripts": {
+    "build": "npm run build -w @temprouter/sdk",
+    "prepare": "npm run build -w @temprouter/sdk",
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
     "agent": "tsx src/agent.ts",
     "cli": "tsx cli/temprouter.ts",
-    "mcp": "tsx mcp/server.ts"
+    "mcp": "tsx mcp/server.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p sdk/tsconfig.json && tsc --noEmit -p cli/tsconfig.json && tsc --noEmit -p mcp/tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "engines": {
     "node": ">=20.12"
@@ -27,6 +33,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.9.3",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^3.2.4"
   }
 }

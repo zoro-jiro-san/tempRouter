@@ -3,14 +3,22 @@
   "version": "0.1.0",
   "description": "Tempo client SDK for tempRouter — confidential, attestation-gated, MPP-paid AI inference in one call.",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     }
   },
-  "files": ["src", "README.md"],
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
   "keywords": ["tempo", "mpp", "tee", "tdx", "confidential", "inference", "x402", "stablecoin"],
+  "license": "MIT",
   "engines": { "node": ">=20.12" },
   "peerDependencies": {
     "@solrouter/sdk": "^1.1.0",

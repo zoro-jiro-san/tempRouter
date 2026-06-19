@@ -4,9 +4,11 @@
   "description": "MCP server exposing tempRouter confidential inference as agent tools (detect_sensitive, verify_enclave, private_inference).",
   "type": "module",
   "bin": { "temprouter-mcp": "./server.ts" },
+  "license": "MIT",
   "engines": { "node": ">=20.12" },
   "dependencies": {
     "@modelcontextprotocol/sdk": ">=1.25.0",
+    "@temprouter/sdk": "^0.1.0",
     "zod": "^4.0.0"
   }
 }

@@ -7,8 +7,8 @@
 
 import { parseArgs } from 'node:util'
 import process from 'node:process'
-import { TempRouter, detectSensitive, formatReport, AttestationError } from '../sdk/src/index.js'
-import { config } from '../src/config.js'
+import { TempRouter, detectSensitive, formatReport, AttestationError } from '@temprouter/sdk'
+import { config } from './config.js'
 
 const USAGE = `temprouter — attestation-gated, MPP-paid confidential inference on Tempo
 
