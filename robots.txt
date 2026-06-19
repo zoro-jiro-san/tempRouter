@@ -1,0 +1,9 @@
+# tempRouter — a payable, end-to-end-encrypted LLM inference endpoint on MPP (Tempo).
+User-agent: *
+Allow: /
+
+# Agent / registry discovery surfaces:
+#   MPP / OpenAPI:   https://temprouter.onrender.com/openapi.json
+#   Agent context:   https://temprouter.onrender.com/llms.txt
+#   Agent skill:     https://temprouter.onrender.com/SKILL.md
+#   Attestation:     https://temprouter.onrender.com/tee/attestation

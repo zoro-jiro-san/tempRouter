@@ -1,0 +1,29 @@
+# tempRouter
+
+> A payable, end-to-end-encrypted LLM inference endpoint on MPP — pay per inference in pathUSD on Tempo.
+
+tempRouter is an MPP-payable endpoint for **confidential** LLM inference. An agent
+pays per response-chunk in pathUSD over an MPP session — but only after it
+cryptographically verifies (Intel DCAP) that inference runs inside a real Phala
+Intel TDX enclave that cannot read the prompt. The relay is blind: it forwards
+only ciphertext and never holds a decryption key.
+
+## When to use
+Use tempRouter when the prompt contains secrets, credentials, PII, or other
+confidential data that must never reach a third-party model host. For non-sensitive
+work, use a normal (cheaper / more capable) public model — the private lane runs an
+OSS model (gpt-oss:20b) in the enclave.
+
+## Flow (agent)
+1. GET /tee/attestation → verify the TDX quote (DCAP) BEFORE paying.
+2. Encrypt the prompt to the enclave key (Arcium RescueCipher + X25519).
+3. POST /v1/chat/completions/stream with {encryptedPrompt, model}.
+   - 402 → open an MPP session (Tempo Moderato, chain 42431), pay per chunk.
+   - 200 → SSE stream of ciphertext chunks (one MPP voucher tick each) + a final receipt frame.
+4. Reassemble + decrypt locally.
+
+## Payment
+- Network: Tempo Moderato testnet (chain 42431), currency pathUSD (6 decimals).
+- Model: MPP `tempo` session intent, unitType `response-chunk`.
+- Discovery: GET /openapi.json (x-service-info + x-payment-info).
+- Entrypoint: GET /SKILL.md — agent skill (install: `npx skills add Router-Labs/tempRouter`).
