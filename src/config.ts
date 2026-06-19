@@ -14,7 +14,6 @@ export const config = {
     '0xa726a1CD723409074DF9108A2187cfA19899aCF8') as `0x${string}`,
 
   // Pricing (decimal token units; TIP-20 stablecoins use 6 decimals).
-  pricePerCall: process.env.PRICE_PER_CALL ?? '0.01', // one-time charge (non-stream)
   pricePerUnit: process.env.PRICE_PER_UNIT ?? '0.0002', // per response-chunk (session/SSE)
   // How many SSE chunks the blind relay slices the enclave's single ciphertext
   // blob into — each chunk = one MPP voucher tick, so the payer's balance visibly
@@ -40,10 +39,8 @@ export const config = {
   serverUrl: (process.env.SERVER_URL ?? 'http://localhost:8402').replace(/\/$/, ''),
   maxDeposit: process.env.MAX_DEPOSIT ?? '1', // pathUSD headroom cap (human units)
 
-  // Legacy/offline upstream (mock or any OpenAI-compatible) for the non-TEE path.
-  upstreamUrl: process.env.UPSTREAM_URL ?? '',
-  upstreamApiKey: process.env.UPSTREAM_API_KEY ?? '',
-  upstreamModel: process.env.UPSTREAM_MODEL ?? 'gpt-oss:20b',
+  // Default model id the blind relay forwards to the enclave when a client omits one.
+  upstreamModel: process.env.UPSTREAM_MODEL ?? 'nosana:gpt-oss:20b',
 } as const
 
 // Tempo testnet ("Moderato") — verified from mppx/dist/tempo/internal/defaults.

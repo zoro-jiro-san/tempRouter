@@ -6,7 +6,7 @@ services:
     region: oregon
     buildCommand: npm install
     startCommand: npm start
-    healthCheckPath: /openapi.json
+    healthCheckPath: /health
     autoDeploy: true
     envVars:
       # Real Phala Intel TDX enclave (public). Drives tdx-live mode.

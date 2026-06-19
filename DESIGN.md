@@ -3,6 +3,14 @@
 > **FINAL LOCKED DESIGN + 4-DAY BUILD PLAN.** Berlin MPP Hackathon @ Futura Camp 2026. Submit **June 20, 9:00 AM**.
 > This document already folds in every required change from the adversarial review. Read the **honesty box** in each section — it states exactly what is real vs. stubbed.
 
+> **⚠️ Historical planning doc — read `docs/adr/` for the as-built truth.** A few build-plan
+> details evolved during implementation: the offline path is now a single **stub mode**
+> (`teeType: STUB-NO-TDX`, null quote → the agent fail-closes) rather than a mock LLM
+> streamer with an `x-temprouter-attestation` header (that mock was never built and its
+> dead config was removed). The attestation→payment binding ships as an unenforced
+> **label**, not a settlement gate (ADR-0002 §4). Where this doc and the ADRs disagree,
+> the ADRs win.
+
 ---
 
 ## 1. Pitch + the precise, defensible privacy claim
